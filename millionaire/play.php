@@ -1,3 +1,4 @@
+
 <?php
 // This file is part of Moodle - http://moodle.org/
 //
@@ -18,7 +19,7 @@
  * This file plays the game millionaire
  * 
  * @author  bdaloukas
- * @version $Id: play.php,v 1.31 2012/07/25 11:16:05 bdaloukas Exp $
+ * @version $Id: play.php, 2017/03 Exp $
  * @package game
  **/
 
@@ -61,6 +62,7 @@ function game_millionaire_play( $id, $game, $attempt, $millionaire, $context) {
     $help5050x = optional_param('Help5050_x', 0, PARAM_INT);
     $helptelephonex = optional_param('HelpTelephone_x', 0, PARAM_INT);
     $helppeoplex = optional_param('HelpPeople_x', 0, PARAM_INT);
+    $helptwochance = optional_param('HelpTwoChance_x', 0, PARAM_INT);
     $quitx = optional_param('Quit_x', 0, PARAM_INT);
 
     if ($millionaire->queryid) {
@@ -68,6 +70,7 @@ function game_millionaire_play( $id, $game, $attempt, $millionaire, $context) {
     } else {
         $query = new StdClass;
     }
+
 
     $found = 0;
     for ($i = 1; $i <= $buttons; $i++) {
@@ -87,6 +90,8 @@ function game_millionaire_play( $id, $game, $attempt, $millionaire, $context) {
         game_millionaire_OnHelpTelephone( $game, $id, $millionaire, $query, $context);
     } else if (!empty($helppeoplex)) {
         game_millionaire_OnHelpPeople( $game, $id, $millionaire, $query, $context);
+    } else if (!empty($helptwochance)) {
+        game_millionaire_OnHelpTwoChance( $game,  $id, $millionaire, $query, $context);
     } else if (!empty($quitx)) {
         game_millionaire_OnQuit( $id,  $game, $attempt, $query, $context);
     } else {
@@ -106,7 +111,7 @@ function game_millionaire_showgrid( $game, $millionaire, $id, $query, $aanswer, 
     }
 
     $color1 = 'black';
-    $color2 = 'DarkOrange';
+    $color2 = 'yellow';
     $colorback = "white";
     $stylequestion = "background:$colorback;color:$color1";
     $stylequestionselected = "background:$colorback;color:$color2";
@@ -158,8 +163,18 @@ function game_millionaire_showgrid( $game, $millionaire, $id, $query, $aanswer, 
         $disabled = "";
     }
     echo '<input type="image" name="HelpPeople" '.$disabled.' id="HelpPeople" Title="'.
-        get_string( 'millionaire_helppeople', 'game').'" src="'.
+        get_string( 'millionaire_helppeoplex', 'game').'" src="'.
         $OUTPUT->pix_url($dirgif.$gif, 'mod_game').'" alt="" border="0">&nbsp;';
+    if ($state & 8) {
+        $gif = "twochancex";
+        $disabled = "disabled=1";
+    } else {
+        $gif = "twochance";
+        $disabled = "";
+    }
+    echo '<input type="image" name="HelpTwoChance" '.$disabled.' id="HelpTwoChance" Title="'.
+        get_string( 'millionaire_helptwochance', 'game').'" src="'.
+        $OUTPUT->pix_url($dirgif.$gif, 'mod_game').'" alt="" border="0">&nbsp;';   
 
     echo '<input type="image" name="Quit" id="Quit" Title="'.
         get_string( 'millionaire_quit', 'game').'" src="'.
@@ -467,7 +482,7 @@ function game_millionaire_loadquestions( $game, $millionaire, &$query, &$aanswer
     }
 }
 
-// Flag 1:5050, 2:telephone 4:people.
+// Flag 1:5050, 2:telephone 4:people, 8:twochance
 function game_millionaire_setstate( &$millionaire, $mask) {
     global $DB;
 
@@ -581,6 +596,40 @@ function game_millionaire_onhelppeople( $game, $id,  &$millionaire, $query, $con
     }
 
     game_millionaire_showgrid( $game, $millionaire, $id, $query, $aanswer, game_substr( $info, 4), $context);
+}
+
+function game_millionaire_onhelptwochance( $game, $id,  &$millionaire, $query, $context) {
+    game_millionaire_loadquestions( $game, $millionaire, $query, $aanswer, $context);
+
+    if (($millionaire->state & 8) != 0) {
+        game_millionaire_ShowGrid( $game, $millionaire, $id, $query, $aanswer, '', $context);
+        return;
+    }
+
+    game_millionaire_setstate( $millionaire, 8);
+
+    $n = count( $aanswer);
+    if ($n < 2) {
+        $wrong = $query->correct;
+    } else {
+        for (;;) {
+            $wrong = mt_rand( 1, $n);
+            if ($wrong != $query->correct) {
+                break;
+            }
+        }
+    }
+    
+    $response = $query->correct;
+    $response2 = $wrong;
+
+    if (mt_rand( 1, 10) <= 5) {  
+    $info = get_string( 'millionaire_info_telephone', 'game').'<br>'."точно".'<br><b>'.$aanswer[ $response - 1].'</b>'."или".'<br><b>'.$aanswer[ $response2 - 1].'</b>';
+    } else {
+    $info = get_string( 'millionaire_info_telephone', 'game').'<br>'."точно".'<br><b>'.$aanswer[ $response2 - 1].'</b>'."или".'<br><b>'.$aanswer[ $response - 1].'</b>';
+    }
+
+    game_millionaire_showgrid( $game, $millionaire, $id, $query, $aanswer, $info, $context);
 }
 
 function game_millionaire_onanswer( $id, $game, $attempt, &$millionaire, $query, $answer, $context) {
