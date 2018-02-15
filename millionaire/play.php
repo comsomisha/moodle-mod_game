@@ -257,13 +257,13 @@ function game_millionaire_showgrid( $game, $millionaire, $id, $query, $aanswer, 
         $name = "btAnswer".$i;
         $s = game_substr( $letters, $i - 1, 1);
 
-        $disabled = ( $state == 15 ? "disabled=1" : "");
+        $disabled = ( $state == 31 ? "disabled=1" : "");
 
         $style = $stylequestion;
         if ((strpos( $aanswer[ $i - 1], 'color:') != false) or (strpos( $aanswer[ $i - 1], 'background:') != false)) {
             $style = '';
         }
-        if ($state == 15 and $i + 1 == $query->correct) {
+        if ($state == 31 and $i + 1 == $query->correct) {
             $style = $stylequestionselected;
         }
 
